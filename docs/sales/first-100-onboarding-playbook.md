@@ -3,6 +3,9 @@
 Date: February 8, 2026
 Audience: Sales reps, implementation coordinators, customer success
 
+Related training asset:
+- `docs/sales/video-user-manual.md` (recording scripts + feature walkthroughs)
+
 ## 1) Ideal Customer Profile (ICP)
 - Tanzania SMEs with 10-300 employees.
 - Monthly payroll pain: manual spreadsheets, delayed filings, compliance risk.
