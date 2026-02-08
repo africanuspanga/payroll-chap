@@ -1,0 +1,74 @@
+name: Ops Restore Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 1 * *"
+
+jobs:
+  restore_drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF_STAGING }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
+      BACKUP_DIR: artifacts/backups
+      RESTORE_DB_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      RESTORE_REQUIRED_TABLES: companies,employees,payroll_periods,payroll_runs,filing_returns
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Link Supabase project
+        run: |
+          supabase login --token "$SUPABASE_ACCESS_TOKEN"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Create and verify backup snapshot
+        run: npm run ops:backup:verify
+
+      - name: Run restore drill against local Postgres
+        run: npm run ops:restore:drill
+
+      - name: Upload drill artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-drill-${{ github.run_id }}
+          path: artifacts/backups
+          if-no-files-found: error

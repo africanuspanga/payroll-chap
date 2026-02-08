@@ -1,0 +1,39 @@
+{
+  "name": "payroll-chap-ui",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "qa:check": "npm run lint && npm run typecheck",
+    "test:payroll": "node --import tsx --test lib/payroll/*.test.ts lib/csv/*.test.ts",
+    "db:check-migrations": "node scripts/ops/check-migrations.mjs",
+    "ops:backup:verify": "node scripts/ops/verify-backup.mjs",
+    "ops:restore:drill": "node scripts/ops/restore-drill.mjs",
+    "ops:retention:cycle": "node scripts/ops/run-retention-cycle.mjs",
+    "ci:check": "npm run db:check-migrations && npm run qa:check && npm run test:payroll && npm run build",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --linked --schema public > lib/types/database.generated.ts",
+    "seed:karatu": "node scripts/bootstrap-karatu-hotels.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "next": "^15.5.12",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/react": "19.0.2",
+    "@types/react-dom": "19.0.2",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.1.6",
+    "tsx": "^4.21.0",
+    "typescript": "5.7.3"
+  }
+}

@@ -1,0 +1,32 @@
+name: Ops Retention Cycle
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 4 * * 1"
+
+jobs:
+  retention_cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RETENTION_PREVIEW_ONLY: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run retention cycle
+        run: npm run ops:retention:cycle
