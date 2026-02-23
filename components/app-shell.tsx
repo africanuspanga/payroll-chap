@@ -56,7 +56,7 @@ export function AppShell({ title, subtitle, children, action }: AppShellProps) {
 
         <main className="pc-main">
           <header className="pc-topbar">
-            <div>
+            <div className="pc-topbar-copy">
               <h1>{title}</h1>
               <p>{subtitle}</p>
             </div>
@@ -76,7 +76,7 @@ export function AppShell({ title, subtitle, children, action }: AppShellProps) {
                 <option value="accountant">Accountant</option>
                 <option value="employee">Employee</option>
               </select>
-              <form action="/auth/sign-out" method="post">
+              <form className="pc-signout-form" action="/auth/sign-out" method="post">
                 <button type="submit" className="pc-button ghost">
                   Sign out
                 </button>

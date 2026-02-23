@@ -40,8 +40,10 @@ a {
 .pc-app-bg {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 1.2rem;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .pc-glow {
@@ -72,7 +74,10 @@ a {
   position: relative;
   display: grid;
   grid-template-columns: 260px 1fr;
+  width: min(1500px, 100%);
+  margin-inline: auto;
   min-height: calc(100vh - 2.4rem);
+  min-height: calc(100dvh - 2.4rem);
   border-radius: 28px;
   overflow: hidden;
   border: 1px solid rgba(16, 42, 67, 0.1);
@@ -87,6 +92,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .pc-brand p {
@@ -111,6 +117,7 @@ a {
   padding: 0.7rem 0.85rem;
   border-radius: 12px;
   font-weight: 500;
+  overflow-wrap: anywhere;
   transition: background-color 180ms ease, transform 180ms ease;
 }
 
@@ -150,6 +157,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0;
 }
 
 .pc-topbar {
@@ -159,16 +167,23 @@ a {
   gap: 1rem;
 }
 
+.pc-topbar-copy {
+  min-width: 0;
+}
+
 .pc-topbar h1 {
   margin: 0;
   font-family: var(--font-display), "Avenir Next", sans-serif;
   font-size: clamp(1.3rem, 2vw, 2rem);
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 .pc-topbar p {
   margin: 0.2rem 0 0;
   color: var(--ink-soft);
+  max-width: 72ch;
+  overflow-wrap: anywhere;
 }
 
 .pc-topbar-controls {
@@ -177,6 +192,20 @@ a {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
+  min-width: 0;
+}
+
+.pc-topbar-controls > * {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.pc-topbar-controls select {
+  max-width: min(100%, 250px);
+}
+
+.pc-signout-form {
+  display: flex;
 }
 
 select,
@@ -226,11 +255,16 @@ textarea {
 .pc-content {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .pc-grid {
   display: grid;
   gap: 1rem;
+}
+
+.pc-grid > * {
+  min-width: 0;
 }
 
 .pc-grid-4 {
@@ -250,6 +284,8 @@ textarea {
   border: 1px solid rgba(16, 42, 67, 0.1);
   border-radius: var(--radius);
   padding: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pc-animate {
@@ -306,6 +342,7 @@ textarea {
   border-radius: 12px;
   padding: 0.7rem;
   background: #fff;
+  overflow-wrap: anywhere;
 }
 
 .pc-timeline {
@@ -762,34 +799,16 @@ textarea {
 
 @media (max-width: 1100px) {
   .pc-shell {
-    grid-template-columns: 88px 1fr;
+    grid-template-columns: 220px 1fr;
   }
 
-  .pc-brand span,
-  .pc-side-foot span,
-  .pc-side-foot p,
-  .pc-nav-link {
-    font-size: 0;
+  .pc-sidebar {
+    padding: 1rem;
+    gap: 1rem;
   }
 
-  .pc-nav-link {
-    position: relative;
-    min-height: 42px;
-  }
-
-  .pc-nav-link::after {
-    content: "";
-    position: absolute;
-    inset: 50% auto auto 50%;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(232, 251, 255, 0.82);
-  }
-
-  .pc-nav-link.active::after {
-    background: #fff;
+  .pc-main {
+    padding: 1.1rem;
   }
 
   .pc-grid-4 {
@@ -814,28 +833,38 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .pc-app-bg {
+    padding: 0.8rem;
+  }
+
   .pc-shell {
     grid-template-columns: 1fr;
     min-height: auto;
+    border-radius: 20px;
   }
 
   .pc-sidebar {
     border-bottom: 1px solid rgba(232, 251, 255, 0.2);
+    gap: 0.85rem;
+    padding: 0.9rem 1rem;
   }
 
   .pc-nav {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .pc-nav-link,
-  .pc-brand span,
-  .pc-side-foot span,
-  .pc-side-foot p {
-    font-size: 0.86rem;
+  .pc-nav-link {
+    white-space: nowrap;
+    flex: 0 0 auto;
+    padding: 0.55rem 0.75rem;
   }
 
-  .pc-nav-link::after {
-    display: none;
+  .pc-side-foot {
+    margin-top: 0;
   }
 
   .pc-grid-4,
@@ -852,6 +881,10 @@ textarea {
   .pc-topbar-controls {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .pc-topbar-controls > * {
+    flex: 1 1 180px;
   }
 
   .pc-lp-header {
@@ -878,5 +911,37 @@ textarea {
 
   .pc-lp-image-placeholder {
     min-height: 240px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pc-app-bg {
+    padding: 0.55rem;
+  }
+
+  .pc-main {
+    padding: 0.9rem;
+  }
+
+  .pc-topbar-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .pc-topbar-controls > * {
+    width: 100%;
+    max-width: none;
+    flex: 1 1 auto;
+  }
+
+  .pc-topbar-controls select,
+  .pc-topbar-controls .pc-button,
+  .pc-signout-form .pc-button {
+    width: 100%;
+  }
+
+  .pc-card {
+    border-radius: 14px;
+    padding: 0.85rem;
   }
 }

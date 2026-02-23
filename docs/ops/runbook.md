@@ -69,9 +69,9 @@ Workflow: `.github/workflows/ops-backup-verify.yml`
 - Stores artifacts in `artifacts/backups`
 
 Required GitHub secrets:
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_PROJECT_REF_STAGING`
-- `SUPABASE_DB_PASSWORD_STAGING`
+- `SUPABASE_ACCESS_TOKEN_STAGING` (fallback: `SUPABASE_ACCESS_TOKEN`)
+- `SUPABASE_PROJECT_REF_STAGING` (fallback: `SUPABASE_PROJECT_REF`)
+- `SUPABASE_DB_PASSWORD_STAGING` (fallback: `SUPABASE_DB_PASSWORD`)
 
 Local/manual equivalent:
 ```bash
@@ -86,6 +86,11 @@ Workflow: `.github/workflows/ops-restore-drill.yml`
 - Takes a fresh backup snapshot from staging project
 - Restores into ephemeral Postgres service in CI
 - Verifies required public tables are present after restore
+
+Required GitHub secrets:
+- `SUPABASE_ACCESS_TOKEN_STAGING` (fallback: `SUPABASE_ACCESS_TOKEN`)
+- `SUPABASE_PROJECT_REF_STAGING` (fallback: `SUPABASE_PROJECT_REF`)
+- `SUPABASE_DB_PASSWORD_STAGING` (fallback: `SUPABASE_DB_PASSWORD`)
 
 Local/manual equivalent:
 ```bash
