@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveCurrentEmployeeForUser } from "@/lib/auth/employee-context";
 import { getRequiredUserContext } from "@/lib/auth/user-context";
 import { ok, fail } from "@/lib/http";
 import { writeAuditEvent } from "@/lib/audit";
@@ -30,7 +31,7 @@ export async function GET() {
     const context = await getRequiredUserContext("/leave");
     const supabase = await createSupabaseServerClient();
 
-    const { data, error } = await supabase
+    let requestsQuery = supabase
       .from("leave_requests")
       .select(
         "id, employee_id, leave_policy_id, starts_on, ends_on, days_requested, status, decision_note, decided_at, created_at, employees(first_name,last_name,employee_no), leave_policies(name,code)",
@@ -38,6 +39,17 @@ export async function GET() {
       .eq("company_id", context.companyId)
       .order("created_at", { ascending: false })
       .limit(200);
+
+    if (context.role === "employee") {
+      const currentEmployee = await resolveCurrentEmployeeForUser({ supabase, context });
+      if (!currentEmployee) {
+        return fail("Current user is not linked to an active employee record", 403);
+      }
+
+      requestsQuery = requestsQuery.eq("employee_id", currentEmployee.id);
+    }
+
+    const { data, error } = await requestsQuery;
 
     if (error) {
       return fail("Failed to load leave requests", 500, error.message);
@@ -86,6 +98,21 @@ export async function POST(request: Request) {
       source?: string;
     };
 
+    let resolvedEmployeeId = body.employeeId;
+
+    if (context.role === "employee") {
+      const currentEmployee = await resolveCurrentEmployeeForUser({ supabase, context });
+      if (!currentEmployee) {
+        return fail("Current user is not linked to an active employee record", 403);
+      }
+
+      if (body.employeeId && body.employeeId !== currentEmployee.id) {
+        return fail("Employees can only create leave requests for themselves", 403);
+      }
+
+      resolvedEmployeeId = currentEmployee.id;
+    }
+
     const idempotencyResolution = await resolveIdempotencyRequest({
       supabase,
       companyId: context.companyId,
@@ -126,7 +153,7 @@ export async function POST(request: Request) {
       return fail(message, status, details);
     }
 
-    if (!body.employeeId || !body.leavePolicyId || !body.startsOn || !body.endsOn || !body.daysRequested) {
+    if (!resolvedEmployeeId || !body.leavePolicyId || !body.startsOn || !body.endsOn || !body.daysRequested) {
       return failWithIdempotency("employeeId, leavePolicyId, startsOn, endsOn, daysRequested are required", 422);
     }
 
@@ -142,7 +169,7 @@ export async function POST(request: Request) {
       .from("leave_requests")
       .insert({
         company_id: context.companyId,
-        employee_id: body.employeeId,
+        employee_id: resolvedEmployeeId,
         leave_policy_id: body.leavePolicyId,
         starts_on: body.startsOn,
         ends_on: body.endsOn,

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveCurrentEmployeeForUser } from "@/lib/auth/employee-context";
 import { getRequiredUserContext } from "@/lib/auth/user-context";
 import { ok, fail } from "@/lib/http";
 
@@ -21,20 +22,40 @@ export async function GET() {
     const context = await getRequiredUserContext("/leave");
     const supabase = await createSupabaseServerClient();
 
-    const [{ data: employees, error: employeesError }, { data: leavePolicies, error: policiesError }] =
-      await Promise.all([
-        supabase
-          .from("employees")
-          .select("id, employee_no, first_name, last_name")
-          .eq("company_id", context.companyId)
-          .eq("is_active", true)
-          .order("first_name", { ascending: true }),
-        supabase
-          .from("leave_policies")
-          .select("id, code, name, is_paid")
-          .eq("company_id", context.companyId)
-          .order("name", { ascending: true }),
-      ]);
+    let employees: EmployeeRow[] = [];
+    let employeesError: { message: string } | null = null;
+
+    if (context.role === "employee") {
+      const currentEmployee = await resolveCurrentEmployeeForUser({ supabase, context });
+      if (!currentEmployee) {
+        return fail("Current user is not linked to an active employee record", 403);
+      }
+
+      employees = [
+        {
+          id: currentEmployee.id,
+          employee_no: currentEmployee.employeeNo,
+          first_name: currentEmployee.firstName,
+          last_name: currentEmployee.lastName,
+        },
+      ];
+    } else {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, employee_no, first_name, last_name")
+        .eq("company_id", context.companyId)
+        .eq("is_active", true)
+        .order("first_name", { ascending: true });
+
+      employees = (data ?? []) as EmployeeRow[];
+      employeesError = error;
+    }
+
+    const { data: leavePolicies, error: policiesError } = await supabase
+      .from("leave_policies")
+      .select("id, code, name, is_paid")
+      .eq("company_id", context.companyId)
+      .order("name", { ascending: true });
 
     if (employeesError || policiesError) {
       return fail("Failed to load leave setup", 500, {
@@ -44,7 +65,7 @@ export async function GET() {
     }
 
     return ok({
-      employees: ((employees ?? []) as EmployeeRow[]).map((employee: EmployeeRow) => ({
+      employees: employees.map((employee: EmployeeRow) => ({
         id: employee.id,
         label: `${employee.first_name} ${employee.last_name}${employee.employee_no ? ` (${employee.employee_no})` : ""}`,
       })),

@@ -17,12 +17,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ em
       return fail("Invalid employee payload", 422, validation.errors);
     }
 
-    const employeeUpdate: Record<string, unknown> = {
-      metadata: {
-        department: body.department ?? null,
-        job_title: body.jobTitle ?? null,
-      },
-    };
+    const { data: existingEmployee, error: existingEmployeeError } = await supabase
+      .from("employees")
+      .select("id, metadata")
+      .eq("company_id", context.companyId)
+      .eq("id", employeeId)
+      .maybeSingle();
+
+    if (existingEmployeeError) {
+      return fail("Failed to load employee", 500, existingEmployeeError.message);
+    }
+
+    if (!existingEmployee) {
+      return fail("Employee not found", 404);
+    }
+
+    const employeeUpdate: Record<string, unknown> = {};
+
+    if (body.department !== undefined || body.jobTitle !== undefined) {
+      const existingMetadata =
+        existingEmployee.metadata && typeof existingEmployee.metadata === "object" ? existingEmployee.metadata : {};
+
+      employeeUpdate.metadata = {
+        ...existingMetadata,
+        ...(body.department !== undefined ? { department: body.department?.trim() || null } : {}),
+        ...(body.jobTitle !== undefined ? { job_title: body.jobTitle?.trim() || null } : {}),
+      };
+    }
 
     if (body.employeeNo !== undefined) employeeUpdate.employee_no = body.employeeNo;
     if (body.firstName !== undefined) employeeUpdate.first_name = body.firstName.trim();
@@ -52,14 +73,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ em
       }
     }
 
-    const { error: updateError } = await supabase
-      .from("employees")
-      .update(employeeUpdate)
-      .eq("company_id", context.companyId)
-      .eq("id", employeeId);
+    if (Object.keys(employeeUpdate).length) {
+      const { error: updateError } = await supabase
+        .from("employees")
+        .update(employeeUpdate)
+        .eq("company_id", context.companyId)
+        .eq("id", employeeId);
 
-    if (updateError) {
-      return fail("Failed to update employee", 500, updateError.message);
+      if (updateError) {
+        return fail("Failed to update employee", 500, updateError.message);
+      }
     }
 
     if (body.basicSalary !== undefined || body.contractType !== undefined || body.hireDate !== undefined) {
